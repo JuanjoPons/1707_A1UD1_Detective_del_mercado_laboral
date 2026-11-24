@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Detectives del mercado laboral</title>
+<style>
+  :root {
+    --bg: #f6f7fb; --card: #ffffff; --ink: #1a2b4c; --muted: #5b6577;
+    --line: #d9dde8; --ok: #2e7d32; --lock: #8a8fa0;
+    --m1: #7b61ff; --m2: #00a3a3; --m3: #ff7a45; --m4: #2d6cdf; --meta: #f2c94c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.5; }
+  header { background: #e53935; color: #fff; padding: 16px 20px; }
+  header h1 { margin: 0 0 4px; font-size: 22px; }
+  header p { margin: 0; opacity: .9; font-size: 14px; }
+  main { max-width: 900px; margin: 0 auto; padding: 16px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 16px; }
+  .bar label { font-weight: 600; }
+  select, input, textarea, button { font: inherit; }
+  select, input[type=text] { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; }
+  textarea { width: 100%; min-height: 56px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; resize: vertical; }
+  button { padding: 8px 14px; border: 0; border-radius: 8px; background: var(--ink); color: #fff; cursor: pointer; }
+  button.secondary { background: #e9ecf4; color: var(--ink); }
+  button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid #378add; outline-offset: 2px; }
+  .mission { background: var(--card); border: 1px solid var(--line); border-left: 6px solid var(--c); border-radius: 12px; padding: 14px 16px; margin-bottom: 14px; }
+  .mission h2 { margin: 0 0 4px; font-size: 18px; }
+  .mission .goal { color: var(--muted); margin: 0 0 10px; font-size: 14px; }
+  .badge { display: inline-block; font-size: 13px; background: #f1f3f8; border-radius: 999px; padding: 2px 10px; margin-bottom: 10px; }
+  .fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+  .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+  .status { font-size: 14px; color: var(--ok); }
+  .hint { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+  .hint.locked { background: #f0f1f5; color: var(--muted); }
+  .hint h3 { margin: 0 0 6px; font-size: 16px; }
+  .hint p { margin: 0; }
+  .unlock { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .error { color: #b00020; font-size: 13px; margin-top: 6px; min-height: 18px; }
+  .progress { font-size: 14px; color: var(--muted); }
+  details { margin-top: 16px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  summary { cursor: pointer; font-weight: 600; }
+  ul { margin: 8px 0 0; padding-left: 20px; }
+  @media print {
+    header, .bar, #missions, #hints, details, .actions { display: none !important; }
+    #report { border: 0; }
+  }
+  [hidden] { display: none !important; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+</head>
+<body>
+<h2 class="sr-only">Juego de misiones sobre el mercado laboral con fichas, pistas bloqueadas y guía final por equipo.</h2>
+<header>
+  <h1>Detectives del mercado laboral</h1>
+  <p>Misiones por equipo · Ámbito de estudio: Tecnología, Economía verde, Atención a personas y Por sorteo</p>
+</header>
+
+<main>
+  <div class="bar">
+    <label for="team">Mi equipo:</label>
+    <select id="team">
+      <option value="1">Equipo 1 · Tecnología</option>
+      <option value="2">Equipo 2 · Economía verde</option>
+      <option value="3">Equipo 3 · Atención a personas</option>
+      <option value="4">Equipo 4 · Por sorteo</option>
+    </select>
+    <span class="progress" id="progress"></span>
+  </div>
+
+  <div class="bar">
+    <label for="names">Integrantes:</label>
+    <input type="text" id="names" placeholder="Nombres y apellidos de cada integrante" style="flex:1;min-width:240px">
+    <button id="report-btn">Generar informe</button>
+  </div>
+
+  <section id="report" hidden class="mission" style="--c: var(--ok)">
+    <h2>Informe del equipo</h2>
+    <div id="report-body"></div>
+    <div class="actions">
+      <button id="download-btn">Descargar informe (.txt)</button>
+      <button class="secondary" id="print-btn">Imprimir / guardar como PDF</button>
+    </div>
+  </section>
+
+  <section id="missions"></section>
+
+  <h2>Pistas</h2>
+  <p class="progress">Cuando el equipo termine una misión, el/la docente os dará el código de su pista. Introducidlo para desbloquearla.</p>
+  <section id="hints"></section>
+
+  <details>
+    <summary>Panel del docente (códigos de desbloqueo)</summary>
+    <ul>
+      <li>Pista 1 · Tendencias: código <strong>SEPE</strong></li>
+      <li>Pista 2 · Profesiones: código <strong>TODOFP</strong></li>
+      <li>Pista 3 · Modalidades: código <strong>TELETRABAJO</strong></li>
+      <li>Pista 4 · EURES: código <strong>EURES</strong></li>
+    </ul>
+    <p class="progress">Los códigos se dan en clase y no son una medida de seguridad. El progreso se guarda en el navegador de cada equipo.</p>
+  </details>
+</main>
+
+<script>
+const MISSIONS = [
+  {
+    id: 1, title: "Misión 1 · Localizar fuentes fiables", color: "var(--m1)", badge: "Rastreador de tendencias",
+    goal: "Encontrad al menos 3 fuentes actualizadas (Observatorio de las Ocupaciones del SEPE, SOIB, organismos del sector) que muestren tendencias del mercado en vuestro ámbito. Pasad el test de fiabilidad.",
+    fields: [
+      { key: "f1", label: "Fuente 1 · enlace, fecha y tendencia que muestra" },
+      { key: "f2", label: "Fuente 2 · enlace, fecha y tendencia que muestra" },
+      { key: "f3", label: "Fuente 3 · enlace, fecha y tendencia que muestra" }
+    ],
+    conclusion: { key: "c1", label: "Conclusión del equipo: lo que habéis deducido de las tendencias" }
+  },
+  {
+    id: 2, title: "Misión 2 · Tres profesiones emergentes", color: "var(--m2)", badge: "Explorador de profesiones",
+    goal: "Para cada profesión: requisitos formativos, competencias demandadas, canales de búsqueda de empleo y fuente.",
+    fields: [
+      { key: "p1", label: "Profesión 1 · nombre, requisitos, competencias, canales y fuente" },
+      { key: "p2", label: "Profesión 2 · nombre, requisitos, competencias, canales y fuente" },
+      { key: "p3", label: "Profesión 3 · nombre, requisitos, competencias, canales y fuente" }
+    ],
+    conclusion: null
+  },
+  {
+    id: 3, title: "Misión 3 · Modalidades laborales", color: "var(--m3)", badge: "Detective del teletrabajo",
+    goal: "a) Clasificad modalidades (presencial, a distancia, teletrabajo, híbrida, por cuenta propia) con un ejemplo real de cada una. b) Comparad una oferta presencial o a distancia con una de teletrabajo (condiciones, tecnología, derechos digitales).",
+    fields: [
+      { key: "m1", label: "a) Ejemplos reales de cada modalidad" },
+      { key: "m2", label: "b) Comparación de dos ofertas" }
+    ],
+    conclusion: { key: "c3", label: "Conclusión: ¿qué modalidad os conviene y por qué?" }
+  },
+  {
+    id: 4, title: "Misión 4 · Empleo en Europa", color: "var(--m4)", badge: "Agente EURES",
+    goal: "Localizad 2 ofertas reales en la Red EURES relacionadas con vuestras profesiones e indicad idioma, requisitos y documentos Europass.",
+    fields: [
+      { key: "e1", label: "Oferta EURES 1 · puesto, país, idioma, requisitos, Europass y enlace" },
+      { key: "e2", label: "Oferta EURES 2 · puesto, país, idioma, requisitos, Europass y enlace" }
+    ],
+    conclusion: { key: "c4", label: "Conclusión: ¿qué necesitaríais para trabajar en otro país de la UE?" }
+  }
+];
+
+const HINTS = [
+  { id: "h1", title: "Pista 1 · Tendencias", code: "SEPE", text: "En el Observatorio de las Ocupaciones del SEPE busca los informes del mercado de trabajo y las ocupaciones con mejores perspectivas. Mira la fecha." },
+  { id: "h2", title: "Pista 2 · Profesiones", code: "TODOFP", text: "Busca en TodoFP el título o certificado de profesionalidad que da acceso a cada profesión y comprueba que aparece en ofertas reales." },
+  { id: "h3", title: "Pista 3 · Modalidades", code: "TELETRABAJO", text: "La Ley 10/2021 exige acuerdo escrito de trabajo a distancia y medios a cargo de la empresa; la LOPDGDD reconoce la desconexión digital." },
+  { id: "h4", title: "Pista 4 · EURES", code: "EURES", text: "En EURES filtra por ocupación, país e idioma. ¿Qué documentos Europass te pedirían (CV, pasaporte de lenguas)?" }
+];
+
+const teamSelect = document.getElementById("team");
+const KEY = (t) => `detectives-equipo-${t}`;
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(KEY(teamSelect.value))) || { texts: {}, unlocked: {} }; }
+  catch { return { texts: {}, unlocked: {} }; }
+}
+function save(state) { localStorage.setItem(KEY(teamSelect.value), JSON.stringify(state)); }
+
+function renderMissions() {
+  const state = load();
+  const wrap = document.getElementById("missions");
+  wrap.innerHTML = "";
+  MISSIONS.forEach(m => {
+    const card = document.createElement("article");
+    card.className = "mission";
+    card.style.setProperty("--c", m.color);
+    const fieldsHtml = m.fields.map(f => `
+      <div class="field"><label for="${f.key}">${f.label}</label>
+      <textarea id="${f.key}" data-key="${f.key}">${escapeHtml(state.texts[f.key] || "")}</textarea></div>`).join("");
+    const concHtml = m.conclusion ? `
+      <div class="field" style="margin-top:10px"><label for="${m.conclusion.key}">${m.conclusion.label}</label>
+      <textarea id="${m.conclusion.key}" data-key="${m.conclusion.key}">${escapeHtml(state.texts[m.conclusion.key] || "")}</textarea></div>` : "";
+    card.innerHTML = `
+      <h2>${m.title}</h2>
+      <p class="goal">${m.goal}</p>
+      <span class="badge">Insignia: ${m.badge}</span>
+      <div class="fields">${fieldsHtml}</div>
+      ${concHtml}
+      <div class="actions">
+        <button data-save="${m.id}">Guardar misión ${m.id}</button>
+        <span class="status" id="st-${m.id}"></span>
+      </div>`;
+    wrap.appendChild(card);
+  });
+  wrap.querySelectorAll("button[data-save]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const m = MISSIONS.find(x => x.id == btn.dataset.save);
+      const s = load();
+      const keys = [...m.fields.map(f => f.key), ...(m.conclusion ? [m.conclusion.key] : [])];
+      keys.forEach(k => { s.texts[k] = document.getElementById(k).value; });
+      save(s);
+      const st = document.getElementById(`st-${m.id}`);
+      st.textContent = "Guardado";
+      setTimeout(() => st.textContent = "", 2000);
+      updateProgress();
+    });
+  });
+}
+
+function renderHints() {
+  const state = load();
+  const wrap = document.getElementById("hints");
+  wrap.innerHTML = "";
+  HINTS.forEach(h => {
+    const open = !!state.unlocked[h.id];
+    const div = document.createElement("div");
+    div.className = "hint" + (open ? "" : " locked");
+    div.innerHTML = open
+      ? `<h3>${h.title}</h3><p>${h.text}</p>`
+      : `<h3>🔒 ${h.title}</h3><p>Pista bloqueada. Introducid el código que os dé el/la docente.</p>
+         <div class="unlock"><input type="text" id="in-${h.id}" placeholder="Código" aria-label="Código para ${h.title}">
+         <button class="secondary" data-unlock="${h.id}">Desbloquear</button></div>
+         <div class="error" id="err-${h.id}"></div>`;
+    wrap.appendChild(div);
+  });
+  wrap.querySelectorAll("button[data-unlock]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const h = HINTS.find(x => x.id === btn.dataset.unlock);
+      const val = document.getElementById(`in-${h.id}`).value.trim().toUpperCase();
+      if (!val) { document.getElementById(`err-${h.id}`).textContent = "Escribid el código primero."; return; }
+      if (val !== h.code) { document.getElementById(`err-${h.id}`).textContent = "Código incorrecto. Preguntad al/a la docente."; return; }
+      const s = load();
+      s.unlocked[h.id] = true;
+      save(s);
+      renderHints();
+      updateProgress();
+    });
+  });
+}
+
+function updateProgress() {
+  const s = load();
+  const done = MISSIONS.filter(m => m.fields.every(f => (s.texts[f.key] || "").trim()) && (!m.conclusion || (s.texts[m.conclusion.key] || "").trim())).length;
+  const hints = HINTS.filter(h => s.unlocked[h.id]).length;
+  document.getElementById("progress").textContent = `Misiones con respuestas: ${done}/4 · Pistas desbloqueadas: ${hints}/4`;
+}
+
+function escapeHtml(str) {
+  return str.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function loadNames() {
+  document.getElementById("names").value = load().names || "";
+}
+document.getElementById("names").addEventListener("change", (e) => {
+  const s = load(); s.names = e.target.value; save(s);
+});
+
+function buildReportText() {
+  const s = load();
+  const team = teamSelect.options[teamSelect.selectedIndex].text;
+  const lines = [];
+  lines.push("INFORME · DETECTIVES DEL MERCADO LABORAL");
+  lines.push(team);
+  lines.push("Integrantes: " + (s.names || "(sin indicar)"));
+  lines.push("Fecha: " + new Date().toLocaleString("es-ES"));
+  lines.push("");
+  MISSIONS.forEach(m => {
+    lines.push("== " + m.title + " ==");
+    m.fields.forEach(f => lines.push("- " + f.label + ":\n  " + ((s.texts[f.key] || "").trim() || "(sin respuesta)")));
+    if (m.conclusion) lines.push("- " + m.conclusion.label + ":\n  " + ((s.texts[m.conclusion.key] || "").trim() || "(sin respuesta)"));
+    lines.push("");
+  });
+  const unlocked = HINTS.filter(h => s.unlocked[h.id]).map(h => h.title);
+  lines.push("== Pistas desbloqueadas ==");
+  lines.push(unlocked.length ? unlocked.join(", ") : "(ninguna)");
+  return lines.join("\n");
+}
+
+function renderReport() {
+  const text = buildReportText();
+  const sec = document.getElementById("report");
+  document.getElementById("report-body").innerHTML = `<pre style="white-space:pre-wrap;font:inherit;margin:0">${escapeHtml(text)}</pre>`;
+  sec.hidden = false;
+  sec.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+document.getElementById("report-btn").addEventListener("click", renderReport);
+document.getElementById("print-btn").addEventListener("click", () => window.print());
+document.getElementById("download-btn").addEventListener("click", () => {
+  const text = buildReportText();
+  const team = teamSelect.value;
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `informe-equipo-${team}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(a.href);
+});
+
+teamSelect.addEventListener("change", () => { renderMissions(); renderHints(); updateProgress(); loadNames(); document.getElementById("report").hidden = true; });
+renderMissions();
+renderHints();
+loadNames();
+updateProgress();
+</script>
+</body>
+</html>
